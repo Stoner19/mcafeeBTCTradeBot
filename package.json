@@ -1,13 +1,14 @@
 {
   "name": "mcaffe",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "",
   "main": "index.js",
   "dependencies": {
     "axios": "^0.17.1",
     "nodemon": "^1.14.3",
     "poloniex-api-node": "^1.6.5",
-    "twit": "^2.2.9"
+    "twit": "^2.2.9",
+    "node-bittrex-api": "^0.8.1"
   },
   "devDependencies": {},
   "scripts": {
