@@ -6,7 +6,7 @@
  */
 
 class bittrex {
-    constructor(API_KEY, SECRET, buyAmount = 0.001, markup = 0.1) {
+    constructor(API_KEY, SECRET, buyAmount = 0.001, markup = 0.02) {
         this.buyAmount = buyAmount;
         this.bittrex  = require('node-bittrex-api');
         this.bittrex.options({
@@ -14,18 +14,6 @@ class bittrex {
             'apisecret' : SECRET
         });
         this.markup = markup; //should be .01 - .05; ##IMPORTANT##
-    }
-
-    printMarkets() {
-        this.bittrex.getmarkets(function(data, err) {
-            var currencies = "";
-            for (var val of data.result) {
-                if (val.BaseCurrency === "BTC") {
-                    currencies += '"' + val.MarketCurrency + '",'
-                }
-            }
-            console.log(currencies)
-        })
     }
 
     checkBalancesandBuy(val) {
@@ -55,6 +43,7 @@ class bittrex {
     }
 
     buy(buyPrice, currencyPair, currency) {
+        const that = this;
         const amount = this.buyAmount / buyPrice;
         console.log("===== PLACING LIMIT BUY ORDER =====");
         console.log(currencyPair);
@@ -65,7 +54,69 @@ class bittrex {
             }
             if (data) {
                 console.log("Buy order ID: " + data.result.uuid);
+                that.checkOrderAndSell(data.result.uuid,  buyPrice, currencyPair, currency);
             }
+        });
+    }
+
+    checkOrderAndSell(uuid, buyPrice, currencyPair, currency) {
+        const that = this;
+        this.bittrex.getorder( { uuid : uuid }, function (data, err) {
+            if (err) {
+                console.log("Order status error: " + err.message);
+            }
+            if (data) {
+                if (data.result.IsOpen === true) {
+                    setTimeout(function() {that.checkOrderAndSell(uuid)}, 3000);
+                } else {
+                    that.checkBalanceAndSell( buyPrice, currencyPair, currency)
+                }
+            }
+        })
+    }
+
+    checkBalanceAndSell(buyPrice, currencyPair, currency) {
+        const that = this;
+        var sellAmount = 0;
+        this.bittrex.getbalance({ currency : currency }, function( data, err ) {
+            if (err) {
+                console.log("Balance retrieval error: " + err.message);
+            }
+            if (data) {
+                sellAmount = data.result.Balance/2;
+                that.sell(currencyPair, sellAmount, buyPrice)
+            }
+        });
+    }
+
+    sell(currencyPair, sellAmount, buyPrice) {
+        this.bittrex.selllimit({market : currencyPair, quantity : sellAmount, rate : buyPrice*1.5}, function ( data, err ) {
+            if (err) {
+                console.log("Order LIMIT SELL error: " + err.message);
+            }
+            if (data) {
+                console.log(`Placed sell order for 50% profit (at ${buyPrice*1.5}). ID: ${data.result.uuid}`);
+            }
+        });
+        this.bittrex.selllimit({market : currencyPair, quantity : sellAmount, rate : buyPrice*1.7}, function ( data, err ) {
+            if (err) {
+                console.log("Order LIMIT SELL error: " + err.message);
+            }
+            if (data) {
+                console.log(`Placed sell order for 70% profit (at ${buyPrice*1.7}). ID: ${data.result.uuid}`);
+            }
+        });
+    }
+
+    printMarkets() {
+        this.bittrex.getmarkets(function(data, err) {
+            var currencies = "";
+            for (var val of data.result) {
+                if (val.BaseCurrency === "BTC") {
+                    currencies += '"' + val.MarketCurrency + '",'
+                }
+            }
+            console.log(currencies)
         });
     }
 }
