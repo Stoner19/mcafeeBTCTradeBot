@@ -50,4 +50,4 @@ Test @ works Made Purchase {"orderNumber":"91514514058","resultingTrades":[{"amo
 */
 // let a = 'ltc coin of the day';
 
-checkTweet(a);
+// checkTweet(a);
